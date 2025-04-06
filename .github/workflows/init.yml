@@ -5,7 +5,31 @@ on:
 
 # taken from https://github.com/kubernetes-sigs/kind/blob/v0.25.0/.github/workflows/vm.yaml#L47-L84
 jobs:
-  build:
+  lima:
+    runs-on: ubuntu-latest
+      
+      steps:
+        - uses: actions/checkout@v4
+      
+        - uses: lima-vm/lima-actions/setup@v1
+          id: lima-actions-setup
+      
+        - uses: actions/cache@v4
+          with:
+            path: ~/.cache/lima
+            key: lima-${{ steps.lima-actions-setup.outputs.version }}
+      
+        - run: limactl start --plain --name=default --cpus=1 --memory=1 template://fedora
+      
+        - uses: lima-vm/lima-actions/ssh@v1
+      
+        - run: rsync -a -e ssh . lima-default:/tmp/repo
+      
+        - run: ssh lima-default ls -l /tmp/repo
+        - run: ssh lima-default sudo dnf upgrade -y
+        - run: ssh lima-default uname -a
+
+  kind:
     runs-on: ubuntu-latest
     env:
       LIMA_VERSION: "1.0.7"
